@@ -23,3 +23,4 @@ app.include_router(direccion)
 @app.get("/", tags=["Inicio"])
 def inicio():
     return {"mensaje": "API MueveloYa funcionando. Visita /docs"}
+

@@ -5,6 +5,7 @@ class UsuarioEntrada(BaseModel):
     nombre: str
     telefono: str
     correo: str
+    rol: str
 
 
 class TransportistaEntrada(BaseModel):
