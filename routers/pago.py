@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from database import database
 from models.schemas import PagoEntrada
+from security import verificar_rol_admin
 
 router = APIRouter(prefix="/pagos", tags=["Pagos"])
 
@@ -34,7 +35,7 @@ def obtener_pago(id: int):
     return dict(fila)
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
 def crear_pago(pago: PagoEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -62,7 +63,7 @@ def crear_pago(pago: PagoEntrada):
     return {"mensaje": "Pago registrado correctamente", "id": nuevo_id}
 
 
-@router.put("/{id}")
+@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def actualizar_pago(id: int, pago: PagoEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -90,7 +91,7 @@ def actualizar_pago(id: int, pago: PagoEntrada):
     return {"mensaje": "Pago actualizado correctamente"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def eliminar_pago(id: int):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()

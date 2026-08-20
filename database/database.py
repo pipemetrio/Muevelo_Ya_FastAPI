@@ -20,6 +20,7 @@ def crear_tablas():
             nombre TEXT NOT NULL,
             telefono TEXT NOT NULL,
             correo TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
             rol TEXT NOT NULL
         )
     """)
@@ -125,28 +126,28 @@ def sembrar_datos():
         cursor.execute(
             """
             INSERT INTO Usuario
-            (nombre, telefono, correo, rol)
-            VALUES (?, ?, ?, ?)
+            (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
         """,
-            ("Sergio Lopez", "3001234567", "sergio00@gmail.com", "admin"),
+            ("Sergio Lopez", "3001234567", "sergio00@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "admin"),
         )
 
         cursor.execute(
             """
             INSERT INTO Usuario
-            (nombre, telefono, correo, rol)
-            VALUES (?, ?, ?, ?)
+            (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
         """,
-            ("Joel Buriticá", "3019876543", "joel@gmail.com", "admin"),
+            ("Joel Buriticá", "3019876543", "joel@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "admin"),
         )
 
         cursor.execute(
             """
             INSERT INTO Usuario
-            (nombre, telefono, correo, rol)
-            VALUES (?, ?, ?, ?)
+            (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
         """,
-            ("Ousmane Dembele", "3154567890", "dembo@gmail.com", "cliente"),
+            ("Ousmane Dembele", "3154567890", "dembo@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "cliente"),
         )
 
     cursor.execute("SELECT COUNT(*) FROM Transportista")

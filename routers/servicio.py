@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from database import database
 from models.schemas import ServicioEntrada
+from security import verificar_rol_admin
 
 router = APIRouter(prefix="/servicios", tags=["Servicios"])
 
@@ -34,7 +35,7 @@ def obtener_servicio(id: int):
     return dict(fila)
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
 def crear_servicio(servicio: ServicioEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -83,7 +84,7 @@ def crear_servicio(servicio: ServicioEntrada):
     return {"mensaje": "Servicio creado correctamente", "id": nuevo_id}
 
 
-@router.put("/{id}")
+@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def actualizar_servicio(id: int, servicio: ServicioEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -120,7 +121,7 @@ def actualizar_servicio(id: int, servicio: ServicioEntrada):
     return {"mensaje": "Servicio actualizado correctamente"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def eliminar_servicio(id: int):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()

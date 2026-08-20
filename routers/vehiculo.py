@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from database import database
 from models.schemas import VehiculoEntrada
+from security import verificar_rol_admin
 
 router = APIRouter(prefix="/vehiculos", tags=["Vehiculos"])
 
@@ -34,7 +35,7 @@ def obtener_vehiculo(id: int):
     return dict(fila)
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
 def crear_vehiculo(vehiculo: VehiculoEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -54,7 +55,7 @@ def crear_vehiculo(vehiculo: VehiculoEntrada):
     return {"mensaje": "Vehículo creado correctamente", "id": nuevo_id}
 
 
-@router.put("/{id}")
+@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def actualizar_vehiculo(id: int, vehiculo: VehiculoEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -81,7 +82,7 @@ def actualizar_vehiculo(id: int, vehiculo: VehiculoEntrada):
     return {"mensaje": "Vehículo actualizado correctamente"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def eliminar_vehiculo(id: int):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()

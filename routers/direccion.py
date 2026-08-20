@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from database import database
 from models.schemas import DireccionEntrada
+from security import verificar_rol_admin
 
 
 router = APIRouter(prefix="/direcciones", tags=["Direcciones"])
@@ -43,7 +44,7 @@ def obtener_direccion(id: int):
     return dict(fila)
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
 def crear_direccion(direccion: DireccionEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -92,7 +93,7 @@ def crear_direccion(direccion: DireccionEntrada):
     }
 
 
-@router.put("/{id}")
+@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def actualizar_direccion(id: int, direccion: DireccionEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -149,7 +150,7 @@ def actualizar_direccion(id: int, direccion: DireccionEntrada):
     }
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def eliminar_direccion(id: int):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()

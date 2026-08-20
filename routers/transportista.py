@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from database import database
 from models.schemas import TransportistaEntrada
+from security import verificar_rol_admin
 
 
 router = APIRouter(prefix="/transportistas", tags=["Transportistas"])
@@ -44,7 +45,7 @@ def obtener_transportista(id: int):
 
 
 @router.post("/", status_code=201)
-def crear_transportista(transportista: TransportistaEntrada):
+def crear_transportista(transportista: TransportistaEntrada, usuario_admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
@@ -77,7 +78,8 @@ def crear_transportista(transportista: TransportistaEntrada):
 @router.put("/{id}")
 def actualizar_transportista(
     id: int,
-    transportista: TransportistaEntrada
+    transportista: TransportistaEntrada,
+    usuario_admin: dict = Depends(verificar_rol_admin)
 ):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -117,7 +119,7 @@ def actualizar_transportista(
 
 
 @router.delete("/{id}")
-def eliminar_transportista(id: int):
+def eliminar_transportista(id: int, usuario_admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
