@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from database import database
 from models.schemas import ObjetoTransporteEntrada
+from security import verificar_rol_admin
 
 router = APIRouter(prefix="/objetos-transporte", tags=["Objetos de Transporte"])
 
@@ -36,7 +37,7 @@ def obtener_objeto(id: int):
     return dict(fila)
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
 def crear_objeto(objeto: ObjetoTransporteEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -70,7 +71,7 @@ def crear_objeto(objeto: ObjetoTransporteEntrada):
     return {"mensaje": "Objeto agregado al servicio correctamente", "id": nuevo_id}
 
 
-@router.put("/{id}")
+@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def actualizar_objeto(id: int, objeto: ObjetoTransporteEntrada):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
@@ -115,7 +116,7 @@ def actualizar_objeto(id: int, objeto: ObjetoTransporteEntrada):
     return {"mensaje": "Objeto de transporte actualizado correctamente"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
 def eliminar_objeto(id: int):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()

@@ -1,13 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from database import database
 from models.schemas import UsuarioEntrada
+from security import obtener_usuario_actual, verificar_rol_admin
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
 @router.get("/")
-def listar_usuarios():
+def listar_usuarios(usuario_admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
@@ -20,7 +21,7 @@ def listar_usuarios():
 
 
 @router.get("/{id}/direcciones")
-def obtener_usuario_direcciones(id: int):
+def obtener_usuario_direcciones(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
@@ -77,7 +78,7 @@ def obtener_usuario_direcciones(id: int):
 
 
 @router.get("/{id}")
-def obtener_usuario(id: int):
+def obtener_usuario(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
@@ -117,7 +118,7 @@ def crear_usuario(usuario: UsuarioEntrada):
 
 
 @router.put("/{id}")
-def actualizar_usuario(id: int, usuario: UsuarioEntrada):
+def actualizar_usuario(id: int, usuario: UsuarioEntrada, usuario_admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
@@ -145,7 +146,7 @@ def actualizar_usuario(id: int, usuario: UsuarioEntrada):
 
 
 @router.delete("/{id}")
-def eliminar_usuario(id: int):
+def eliminar_usuario(id: int, usuario_admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     cursor = conexion.cursor()
 
