@@ -18,6 +18,62 @@ def listar_usuarios():
 
     return [dict(fila) for fila in filas]
 
+@router.get("/{id}/direcciones")
+def obtener_usuario_direcciones(id: int):
+    conexion = database.obtener_conexion()
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            Usuario.id AS usuario_id,
+            Usuario.nombre,
+            Usuario.telefono,
+            Usuario.correo,
+            Usuario.rol,
+            Direccion.id AS direccion_id,
+            Direccion.alias,
+            Direccion.ciudad,
+            Direccion.barrio,
+            Direccion.direccion
+        FROM Usuario
+        LEFT JOIN Direccion
+        ON Usuario.id = Direccion.usuario_id
+        WHERE Usuario.id = ?
+        """,
+        (id,)
+    )
+
+    filas = cursor.fetchall()
+
+    conexion.close()
+
+    if not filas:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    usuario = {
+        "id": filas[0]["usuario_id"],
+        "nombre": filas[0]["nombre"],
+        "telefono": filas[0]["telefono"],
+        "correo": filas[0]["correo"],
+        "rol": filas[0]["rol"],
+        "direcciones": []
+    }
+
+    for fila in filas:
+        if fila["direccion_id"] is not None:
+            usuario["direcciones"].append({
+                "id": fila["direccion_id"],
+                "alias": fila["alias"],
+                "ciudad": fila["ciudad"],
+                "barrio": fila["barrio"],
+                "direccion": fila["direccion"]
+            })
+
+    return usuario
 
 @router.get("/{id}")
 def obtener_usuario(id: int):

@@ -27,7 +27,7 @@ class DireccionEntrada(BaseModel):
     ciudad: str
     barrio: str
     direccion: str
-    cliente_id: int
+    usuario_id: int
 
 
 class ServicioEntrada(BaseModel):
