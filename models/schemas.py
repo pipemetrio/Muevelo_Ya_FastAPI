@@ -34,7 +34,7 @@ class ServicioEntrada(BaseModel):
     fecha: str
     estado: str
     descripcion: str
-    cliente_id: int
+    usuario_id: int
     direccion_origen_id: int
     direccion_destino_id: int
 
