@@ -1,60 +1,74 @@
-from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException, status
+import os
+from datetime import datetime, timedelta, timezone
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+from jwt.exceptions import InvalidTokenError
+import bcrypt
 from database import database
 
-SECRET_KEY = "clave_secreta_super_segura_muevelo_ya"
+# Configuración del JWT
+SECRET_KEY = os.getenv("SECRET_KEY", "clave_secreta_muevelo_ya")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+TIEMPO_EXPIRACION_MINUTOS = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def verificar_password(password_plana, password_hash):
-    return pwd_context.verify(password_plana, password_hash)
 
-def obtener_password_hash(password):
-    return pwd_context.hash(password[:72])
+# --- Funciones de Hash para Contraseñas ---
+def hash_password(password: str) -> str:
+    pwd_bytes = password.encode("utf-8")
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode("utf-8")
 
-def crear_token_acceso(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def obtener_usuario_actual(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="No se pudieron validar las credenciales",
+def verificar_password(password_plana: str, password_hash: str) -> bool:
+    return bcrypt.checkpw(password_plana.encode("utf-8"), password_hash.encode("utf-8"))
+
+
+# --- Funciones de Token JWT ---
+def crear_token(data: dict) -> str:
+    datos = data.copy()
+    expiracion = datetime.now(timezone.utc) + timedelta(
+        minutes=TIEMPO_EXPIRACION_MINUTOS
+    )
+    datos.update({"exp": expiracion})
+    return jwt.encode(datos, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# --- Middleware de Autenticación y Autorización ---
+def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
+    error_autenticacion = HTTPException(
+        status_code=401,
+        detail="Token inválido o expirado",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        correo: str = payload.get("sub")
-        if correo is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+        correo = payload.get("sub")
+        if not isinstance(correo, str) or not correo:
+            raise error_autenticacion
+    except InvalidTokenError:
+        raise error_autenticacion
 
     conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
-    cursor.execute("SELECT * FROM Usuario WHERE correo = ?", (correo,))
-    usuario = cursor.fetchone()
-    conexion.close()
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("SELECT * FROM Usuario WHERE correo = ?", (correo,))
+        usuario = cursor.fetchone()
+    finally:
+        conexion.close()
 
     if usuario is None:
-        raise credentials_exception
+        raise error_autenticacion
+
     return dict(usuario)
 
-def verificar_rol_admin(usuario: dict = Depends(obtener_usuario_actual)):
+
+def verificar_rol_admin(usuario: dict = Depends(obtener_usuario_actual)) -> dict:
     if usuario.get("rol") != "admin":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permisos de administrador para realizar esta acción"
+            status_code=403,
+            detail="Se requieren permisos de administrador",
         )
-    return usuario
-
-def obtener_usuario_autenticado(usuario: dict = Depends(obtener_usuario_actual)):
     return usuario
