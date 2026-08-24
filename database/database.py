@@ -1,6 +1,8 @@
 import sqlite3
 
-DB_NAME = "mueveloYa.db"
+from security import hash_password
+
+DB_NAME = "mueveloya.db"
 
 
 def obtener_conexion():
@@ -112,7 +114,7 @@ def crear_tablas():
     conexion.commit()
     conexion.close()
 
-    print(f"[BD] Tablas verificadas en DB {DB_NAME}")
+    print(f"[BD] Tablas verificadas en {DB_NAME}")
 
 
 def sembrar_datos():
@@ -123,32 +125,66 @@ def sembrar_datos():
     cantidad_usuarios = cursor.fetchone()[0]
 
     if cantidad_usuarios == 0:
+        # Generar hashes reales para todas las cuentas de prueba
+        pass_sergio = hash_password("sergio123")
+        pass_joel = hash_password("joel123")
+        pass_dembo = hash_password("dembo123")
+        pass_admin = hash_password("admin123")
+        pass_cliente = hash_password("cliente123")
+
+        # 1. Sergio (admin)
         cursor.execute(
             """
-            INSERT INTO Usuario
-            (nombre, telefono, correo, password, rol)
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
             VALUES (?, ?, ?, ?, ?)
-        """,
-            ("Sergio Lopez", "3001234567", "sergio00@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "admin"),
+            """,
+            ("Sergio Lopez", "3001234567", "sergio00@gmail.com", pass_sergio, "admin"),
         )
 
+        # 2. Joel (admin)
         cursor.execute(
             """
-            INSERT INTO Usuario
-            (nombre, telefono, correo, password, rol)
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
             VALUES (?, ?, ?, ?, ?)
-        """,
-            ("Joel Buriticá", "3019876543", "joel@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "admin"),
+            """,
+            ("Joel Buriticá", "3019876543", "joel@gmail.com", pass_joel, "admin"),
         )
 
+        # 3. Dembele (cliente)
         cursor.execute(
             """
-            INSERT INTO Usuario
-            (nombre, telefono, correo, password, rol)
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
             VALUES (?, ?, ?, ?, ?)
-        """,
-            ("Ousmane Dembele", "3154567890", "dembo@gmail.com", "$2b$12$e0...hash_de_ejemplo...", "cliente"),
+            """,
+            ("Ousmane Dembele", "3154567890", "dembo@gmail.com", pass_dembo, "cliente"),
         )
+
+        # 4. Admin genérico
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            ("Administrador", "3000000000", "admin@mueveloya.com", pass_admin, "admin"),
+        )
+
+        # 5. Cliente genérico
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "Cliente Prueba",
+                "3111111111",
+                "cliente@mueveloya.com",
+                pass_cliente,
+                "cliente",
+            ),
+        )
+
+        conexion.commit()
+        print("Usuarios de prueba sembrados correctamente.")
 
     cursor.execute("SELECT COUNT(*) FROM Transportista")
     cantidad_transportistas = cursor.fetchone()[0]

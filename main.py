@@ -1,36 +1,43 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from database import database
-from routers.usuario import router as usuario
-from routers.transportista import router as transportista
-from routers.direccion import router as direccion
-from routers.auth import router as auth
-from routers.servicio import router as servicio
-from routers.pago import router as pago
-from routers.vehiculo import router as vehiculo
-from routers.objeto_transporte import router as objeto_transporte
-from routers.asignacion import router as asignacion
+from database.database import crear_tablas, sembrar_datos
+from routers import (
+    auth,
+    usuario,
+    transportista,
+    vehiculo,
+    direccion,
+    servicio,
+    objeto_transporte,
+    asignacion,
+    pago,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Asegura que las tablas y datos iniciales se carguen al iniciar
-    database.crear_tablas()
-    database.sembrar_datos()
+    crear_tablas()
+    sembrar_datos()
     yield
 
-app = FastAPI(title="API MuéveloYa", lifespan=lifespan)
 
-app.include_router(auth)
-app.include_router(usuario)
-app.include_router(transportista)
-app.include_router(direccion)
-app.include_router(servicio)
-app.include_router(objeto_transporte)
-app.include_router(pago)
-app.include_router(vehiculo)
-app.include_router(vehiculo)
-app.include_router(asignacion)
+app = FastAPI(
+    title="API MuéveloYa",
+    description="API RESTful para la gestión logística de servicios de carga y mudanzas",
+    lifespan=lifespan,
+)
+
+app.include_router(auth.router)
+app.include_router(usuario.router)
+app.include_router(transportista.router)
+app.include_router(vehiculo.router)
+app.include_router(direccion.router)
+app.include_router(servicio.router)
+app.include_router(objeto_transporte.router)
+app.include_router(asignacion.router)
+app.include_router(pago.router)
+
 
 @app.get("/", tags=["Inicio"])
 def inicio():
-    return {"mensaje": "API MuéveloYa funcionando. Visita /docs"}
+    return {"mensaje": "API MuéveloYa funcionando. Visita http://127.0.0.1:8000/docs"}

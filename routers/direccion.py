@@ -1,176 +1,151 @@
-from fastapi import APIRouter, Depends, HTTPException
+import sqlite3
 
+from fastapi import APIRouter, HTTPException, Depends
 from database import database
-from models.schemas import DireccionEntrada
-from security import verificar_rol_admin
-
+from schemas.schemas import DireccionEntrada
+from security import obtener_usuario_actual
 
 router = APIRouter(prefix="/direcciones", tags=["Direcciones"])
 
 
 @router.get("/")
-def listar_direcciones():
+def listar_direcciones(usuario_actual: dict = Depends(obtener_usuario_actual)):
     conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
-
-    cursor.execute("SELECT * FROM Direccion")
-    filas = cursor.fetchall()
-
-    conexion.close()
-
-    return [dict(fila) for fila in filas]
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("SELECT * FROM Direccion")
+        filas = cursor.fetchall()
+        return [dict(fila) for fila in filas]
+    finally:
+        conexion.close()
 
 
 @router.get("/{id}")
-def obtener_direccion(id: int):
+def obtener_direccion(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
     conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("SELECT * FROM Direccion WHERE id = ?", (id,))
+        fila = cursor.fetchone()
 
-    cursor.execute(
-        "SELECT * FROM Direccion WHERE id = ?",
-        (id,)
-    )
+        if fila is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Dirección no encontrada",
+            )
 
-    fila = cursor.fetchone()
-
-    conexion.close()
-
-    if fila is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Direccion no encontrada"
-        )
-
-    return dict(fila)
-
-
-@router.post("/", status_code=201, dependencies=[Depends(verificar_rol_admin)])
-def crear_direccion(direccion: DireccionEntrada):
-    conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
-
-    # Verificar que el usuario exista
-    cursor.execute(
-        "SELECT * FROM Usuario WHERE id = ?",
-        (direccion.usuario_id,)
-    )
-
-    usuario = cursor.fetchone()
-
-    if usuario is None:
+        return dict(fila)
+    finally:
         conexion.close()
 
+
+@router.post("/", status_code=201)
+def crear_direccion(
+    direccion: DireccionEntrada, usuario_actual: dict = Depends(obtener_usuario_actual)
+):
+    conexion = database.obtener_conexion()
+    try:
+        cursor = conexion.cursor()
+
+        # Verificar existencia del usuario
+        cursor.execute("SELECT id FROM Usuario WHERE id = ?", (direccion.usuario_id,))
+        if cursor.fetchone() is None:
+            raise HTTPException(
+                status_code=400,
+                detail="El usuario indicado no existe",
+            )
+
+        cursor.execute(
+            """
+            INSERT INTO Direccion (alias, ciudad, barrio, direccion, usuario_id)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                direccion.alias,
+                direccion.ciudad,
+                direccion.barrio,
+                direccion.direccion,
+                direccion.usuario_id,
+            ),
+        )
+
+        conexion.commit()
+        nuevo_id = cursor.lastrowid
+
+        return {"mensaje": "Dirección creada correctamente", "id": nuevo_id}
+    finally:
+        conexion.close()
+
+
+@router.put("/{id}")
+def actualizar_direccion(
+    id: int,
+    direccion: DireccionEntrada,
+    usuario_actual: dict = Depends(obtener_usuario_actual),
+):
+    conexion = database.obtener_conexion()
+    try:
+        cursor = conexion.cursor()
+
+        # Verificar existencia del usuario
+        cursor.execute("SELECT id FROM Usuario WHERE id = ?", (direccion.usuario_id,))
+        if cursor.fetchone() is None:
+            raise HTTPException(
+                status_code=400,
+                detail="El usuario indicado no existe",
+            )
+
+        cursor.execute(
+            """
+            UPDATE Direccion
+            SET alias = ?,
+                ciudad = ?,
+                barrio = ?,
+                direccion = ?,
+                usuario_id = ?
+            WHERE id = ?
+            """,
+            (
+                direccion.alias,
+                direccion.ciudad,
+                direccion.barrio,
+                direccion.direccion,
+                direccion.usuario_id,
+                id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Dirección no encontrada",
+            )
+
+        conexion.commit()
+        return {"mensaje": "Dirección actualizada correctamente"}
+    finally:
+        conexion.close()
+
+
+@router.delete("/{id}")
+def eliminar_direccion(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    conexion = database.obtener_conexion()
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("DELETE FROM Direccion WHERE id = ?", (id,))
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Dirección no encontrada",
+            )
+
+        conexion.commit()
+        return {"mensaje": "Dirección eliminada correctamente"}
+    except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,
-            detail="El usuario indicado no existe"
+            detail="No se puede eliminar la dirección porque está vinculada como origen o destino en uno o más servicios.",
         )
-
-    # Crear direccion
-    cursor.execute(
-        """
-        INSERT INTO Direccion
-        (alias, ciudad, barrio, direccion, usuario_id)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            direccion.alias,
-            direccion.ciudad,
-            direccion.barrio,
-            direccion.direccion,
-            direccion.usuario_id
-        )
-    )
-
-    conexion.commit()
-
-    nuevo_id = cursor.lastrowid
-
-    conexion.close()
-
-    return {
-        "mensaje": "Direccion creada correctamente",
-        "id": nuevo_id
-    }
-
-
-@router.put("/{id}", dependencies=[Depends(verificar_rol_admin)])
-def actualizar_direccion(id: int, direccion: DireccionEntrada):
-    conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
-
-    # Verificar que el usuario exista
-    cursor.execute(
-        "SELECT * FROM Usuario WHERE id = ?",
-        (direccion.usuario_id,)
-    )
-
-    usuario = cursor.fetchone()
-
-    if usuario is None:
+    finally:
         conexion.close()
-
-        raise HTTPException(
-            status_code=400,
-            detail="El usuario indicado no existe"
-        )
-
-    cursor.execute(
-        """
-        UPDATE Direccion
-        SET alias = ?,
-            ciudad = ?,
-            barrio = ?,
-            direccion = ?,
-            usuario_id = ?
-        WHERE id = ?
-        """,
-        (
-            direccion.alias,
-            direccion.ciudad,
-            direccion.barrio,
-            direccion.direccion,
-            direccion.usuario_id,
-            id
-        )
-    )
-
-    if cursor.rowcount == 0:
-        conexion.close()
-
-        raise HTTPException(
-            status_code=404,
-            detail="Direccion no encontrada"
-        )
-
-    conexion.commit()
-    conexion.close()
-
-    return {
-        "mensaje": "Direccion actualizada correctamente"
-    }
-
-
-@router.delete("/{id}", dependencies=[Depends(verificar_rol_admin)])
-def eliminar_direccion(id: int):
-    conexion = database.obtener_conexion()
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        "DELETE FROM Direccion WHERE id = ?",
-        (id,)
-    )
-
-    if cursor.rowcount == 0:
-        conexion.close()
-
-        raise HTTPException(
-            status_code=404,
-            detail="Direccion no encontrada"
-        )
-
-    conexion.commit()
-    conexion.close()
-
-    return {
-        "mensaje": "Direccion eliminada correctamente"
-    }
