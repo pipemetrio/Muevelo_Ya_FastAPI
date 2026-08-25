@@ -1,3 +1,4 @@
+from datetime import date
 from pydantic import BaseModel
 
 
@@ -31,7 +32,7 @@ class DireccionEntrada(BaseModel):
 
 
 class ServicioEntrada(BaseModel):
-    fecha: str
+    fecha: date
     estado: str
     descripcion: str
     usuario_id: int
@@ -48,7 +49,7 @@ class ObjetoTransporteEntrada(BaseModel):
 
 
 class AsignacionEntrada(BaseModel):
-    fecha_asignacion: str
+    fecha_asignacion: date
     servicio_id: int
     transportista_id: int
     vehiculo_id: int
@@ -58,5 +59,5 @@ class PagoEntrada(BaseModel):
     valor: float
     metodo: str
     pagado: bool
-    fecha_pago: str
+    fecha_pago: date
     servicio_id: int
