@@ -65,6 +65,17 @@ def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
     return dict(usuario)
 
 
+def verificar_rol_transportista(
+    usuario: dict = Depends(obtener_usuario_actual),
+):
+    if usuario["rol"] != "transportista":
+        raise HTTPException(
+            status_code=403,
+            detail="Permisos insuficientes. Se requiere rol de transportista.",
+        )
+    return usuario
+
+
 def verificar_rol_admin(usuario: dict = Depends(obtener_usuario_actual)) -> dict:
     if usuario.get("rol") != "admin":
         raise HTTPException(

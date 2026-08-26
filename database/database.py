@@ -30,10 +30,10 @@ def crear_tablas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS Transportista (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
             documento TEXT NOT NULL UNIQUE,
-            telefono TEXT NOT NULL,
-            activo INTEGER NOT NULL DEFAULT 1
+            activo INTEGER NOT NULL DEFAULT 1,
+            usuario_id INTEGER UNIQUE NOT NULL,
+            FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
         )
     """)
 
@@ -131,6 +131,9 @@ def sembrar_datos():
         pass_dembo = hash_password("dembo123")
         pass_admin = hash_password("admin123")
         pass_cliente = hash_password("cliente123")
+        pass_transportista1 = hash_password("transportista123")
+        pass_transportista2 = hash_password("transportista456")
+        pass_transportista3 = hash_password("transportista789")
 
         # 1. Sergio (admin)
         cursor.execute(
@@ -159,16 +162,7 @@ def sembrar_datos():
             ("Ousmane Dembele", "3154567890", "dembo@gmail.com", pass_dembo, "cliente"),
         )
 
-        # 4. Admin genérico
-        cursor.execute(
-            """
-            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("Administrador", "3000000000", "admin@mueveloya.com", pass_admin, "admin"),
-        )
-
-        # 5. Cliente genérico
+        # 4. Cliente genérico
         cursor.execute(
             """
             INSERT INTO Usuario (nombre, telefono, correo, password, rol)
@@ -183,6 +177,60 @@ def sembrar_datos():
             ),
         )
 
+        # 5. Admin genérico
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            ("Administrador", "3000000000", "admin@mueveloya.com", pass_admin, "admin"),
+        )
+
+        # 6. Transportista 1
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "Andrés Felipe",
+                "3115558899",
+                "driver1@mueveloya.com",
+                pass_transportista1,
+                "transportista",
+            ),
+        )
+
+        # 7. Transportista 2
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "Sergio Lopez",
+                "3124447788",
+                "driver2@mueveloya.com",
+                pass_transportista2,
+                "transportista",
+            ),
+        )
+
+        # 8. Transportista 3
+        cursor.execute(
+            """
+            INSERT INTO Usuario (nombre, telefono, correo, password, rol)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "Lionel Messi",
+                "3203332211",
+                "driver3@mueveloya.com",
+                pass_transportista3,
+                "transportista",
+            ),
+        )
+
         conexion.commit()
         print("Usuarios de prueba sembrados correctamente.")
 
@@ -193,28 +241,28 @@ def sembrar_datos():
         cursor.execute(
             """
             INSERT INTO Transportista
-            (nombre, documento, telefono, activo)
-            VALUES (?, ?, ?, ?)
-        """,
-            ("Andrés Felipe", "12345678", "3115558899", 1),
+            (documento, activo, usuario_id)
+            VALUES (?, ?, ?)
+            """,
+            ("12345678", 1, 6),
         )
 
         cursor.execute(
             """
             INSERT INTO Transportista
-            (nombre, documento, telefono, activo)
-            VALUES (?, ?, ?, ?)
-        """,
-            ("Sergio Lopez", "98765432", "3124447788", 1),
+            (documento, activo, usuario_id)
+            VALUES (?, ?, ?)
+            """,
+            ("98765432", 1, 7),
         )
 
         cursor.execute(
             """
             INSERT INTO Transportista
-            (nombre, documento, telefono, activo)
-            VALUES (?, ?, ?, ?)
-        """,
-            ("Lionel Messi", "45678912", "3203332211", 0),
+            (documento, activo, usuario_id)
+            VALUES (?, ?, ?)
+            """,
+            ("45678912", 0, 8),
         )
 
     cursor.execute("SELECT COUNT(*) FROM Vehiculo")

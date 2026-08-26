@@ -10,10 +10,9 @@ class UsuarioEntrada(BaseModel):
 
 
 class TransportistaEntrada(BaseModel):
-    nombre: str
     documento: str
-    telefono: str
     activo: bool
+    usuario_id: int
 
 
 class VehiculoEntrada(BaseModel):
