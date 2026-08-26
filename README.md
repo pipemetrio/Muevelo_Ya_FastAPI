@@ -89,11 +89,11 @@ Swagger UI: http://127.0.0.1:8000/docs
 
 Para las pruebas de autenticación y permisos, utiliza las siguientes credenciales (sembradas por defecto):
 
-| Correo electrónico    | Rol                     | Contraseña |
-| --------------------- | ----------------------- | ---------- |
-| admin@mueveloya.com   | Administrador (`admin`) | admin123   |
-| cliente@mueveloya.com | Cliente (`cliente`)     | cliente123 |
-
+| Correo electrónico    | Rol                                 | Contraseña       |
+| --------------------- | ----------------------------------- | ---------------- |
+| admin@mueveloya.com   | Administrador (`admin`)             | admin123         |
+| cliente@mueveloya.com | Cliente (`cliente`)                 | cliente123       |
+| driver1@mueveloya.com | Transportista (`transportista`)     | transportista123 |
 ---
 
 ## Diagrama Entidad-Relación
