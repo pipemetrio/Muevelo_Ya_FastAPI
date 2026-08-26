@@ -98,7 +98,7 @@ Para las pruebas de autenticación y permisos, utiliza las siguientes credencial
 
 ## Diagrama Entidad-Relación
 
-## ![Diagrama del Sistema](evidence/diagrama_MER_FastAPI.drawio.png)
+## ![Diagrama del Sistema](evidence/Diagrama_MER_FastAPI.drawio.png)
 
 ---
 
