@@ -1,5 +1,4 @@
 import sqlite3
-
 from fastapi import APIRouter, HTTPException, Depends
 from database import database
 from schemas.schemas import TransportistaEntrada
@@ -8,37 +7,94 @@ from security import obtener_usuario_actual, verificar_rol_admin
 router = APIRouter(prefix="/transportistas", tags=["Transportistas"])
 
 
-@router.get("/")
-def listar_transportistas(usuario_actual: dict = Depends(obtener_usuario_actual)):
+@router.get("/", description="Roles permitidos: admin")
+def listar_transportistas(admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("SELECT * FROM Transportista")
+        cursor.execute("""
+            SELECT 
+                t.id,
+                t.documento,
+                t.activo,
+                t.usuario_id,
+                u.nombre AS usuario_nombre,
+                u.telefono AS usuario_telefono,
+                u.correo AS usuario_correo
+            FROM Transportista t
+            INNER JOIN Usuario u ON t.usuario_id = u.id
+            """)
         filas = cursor.fetchall()
-        return [dict(fila) for fila in filas]
+
+        resultado = []
+        for fila in filas:
+            resultado.append(
+                {
+                    "id": fila["id"],
+                    "documento": fila["documento"],
+                    "activo": bool(fila["activo"]),
+                    "usuario_id": fila["usuario_id"],
+                    "usuario": {
+                        "nombre": fila["usuario_nombre"],
+                        "telefono": fila["usuario_telefono"],
+                        "correo": fila["usuario_correo"],
+                    },
+                }
+            )
+        return resultado
     finally:
         conexion.close()
 
 
-@router.get("/{id}")
+@router.get("/{id}", description="Roles permitidos: transportista, admin")
 def obtener_transportista(
     id: int, usuario_actual: dict = Depends(obtener_usuario_actual)
 ):
+    if usuario_actual["rol"] not in ["transportista", "admin"]:
+        raise HTTPException(
+            status_code=403, detail="No tienes permisos para ver esta información"
+        )
+
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("SELECT * FROM Transportista WHERE id = ?", (id,))
+        cursor.execute(
+            """
+            SELECT 
+                t.id,
+                t.documento,
+                t.activo,
+                t.usuario_id,
+                u.nombre AS usuario_nombre,
+                u.telefono AS usuario_telefono,
+                u.correo AS usuario_correo
+            FROM Transportista t
+            INNER JOIN Usuario u ON t.usuario_id = u.id
+            WHERE t.id = ?
+            """,
+            (id,),
+        )
         fila = cursor.fetchone()
 
         if fila is None:
             raise HTTPException(status_code=404, detail="Transportista no encontrado")
 
-        return dict(fila)
+        return {
+            "id": fila["id"],
+            "documento": fila["documento"],
+            "activo": bool(fila["activo"]),
+            "usuario_id": fila["usuario_id"],
+            "usuario": {
+                "nombre": fila["usuario_nombre"],
+                "telefono": fila["usuario_telefono"],
+                "correo": fila["usuario_correo"],
+            },
+        }
     finally:
         conexion.close()
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, description="Roles permitidos: admin")
 def crear_transportista(
     transportista: TransportistaEntrada, admin: dict = Depends(verificar_rol_admin)
 ):
@@ -47,24 +103,32 @@ def crear_transportista(
         cursor = conexion.cursor()
         cursor.execute(
             """
-            INSERT INTO Transportista (nombre, documento, telefono, activo)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO Transportista (documento, activo, usuario_id)
+            VALUES (?, ?, ?)
             """,
             (
-                transportista.nombre,
                 transportista.documento,
-                transportista.telefono,
-                transportista.activo,
+                int(transportista.activo),
+                transportista.usuario_id,
             ),
         )
         conexion.commit()
         nuevo_id = cursor.lastrowid
-        return {"mensaje": "Transportista creado correctamente", "id": nuevo_id}
+        return {
+            "mensaje": "Transportista creado correctamente",
+            "id": nuevo_id,
+            "creado_por": admin["nombre"],
+        }
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=400,
+            detail="El documento o el usuario_id ya están registrados en otro transportista.",
+        )
     finally:
         conexion.close()
 
 
-@router.put("/{id}")
+@router.put("/{id}", description="Roles permitidos: admin")
 def actualizar_transportista(
     id: int,
     transportista: TransportistaEntrada,
@@ -76,17 +140,13 @@ def actualizar_transportista(
         cursor.execute(
             """
             UPDATE Transportista
-            SET nombre = ?,
-                documento = ?,
-                telefono = ?,
+            SET documento = ?,
                 activo = ?
             WHERE id = ?
             """,
             (
-                transportista.nombre,
                 transportista.documento,
-                transportista.telefono,
-                transportista.activo,
+                int(transportista.activo),
                 id,
             ),
         )
@@ -95,12 +155,15 @@ def actualizar_transportista(
             raise HTTPException(status_code=404, detail="Transportista no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Transportista actualizado correctamente"}
+        return {
+            "mensaje": "Transportista actualizado correctamente",
+            "modificado_por": admin["nombre"],
+        }
     finally:
         conexion.close()
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", description="Roles permitidos: admin")
 def eliminar_transportista(id: int, admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
@@ -111,7 +174,10 @@ def eliminar_transportista(id: int, admin: dict = Depends(verificar_rol_admin)):
             raise HTTPException(status_code=404, detail="Transportista no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Transportista eliminado correctamente"}
+        return {
+            "mensaje": "Transportista eliminado correctamente",
+            "eliminado_por": admin["nombre"],
+        }
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,

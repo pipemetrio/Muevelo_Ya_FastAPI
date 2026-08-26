@@ -1,5 +1,4 @@
 import sqlite3
-
 from fastapi import APIRouter, HTTPException, Depends
 from database import database
 from schemas.schemas import VehiculoEntrada
@@ -8,8 +7,13 @@ from security import obtener_usuario_actual, verificar_rol_admin
 router = APIRouter(prefix="/vehiculos", tags=["Vehículos"])
 
 
-@router.get("/")
+@router.get("/", description="Roles permitidos: transportista, admin")
 def listar_vehiculos(usuario_actual: dict = Depends(obtener_usuario_actual)):
+    if usuario_actual["rol"] not in ["transportista", "admin"]:
+        raise HTTPException(
+            status_code=403, detail="No tienes permisos para acceder a esta información"
+        )
+
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
@@ -20,8 +24,13 @@ def listar_vehiculos(usuario_actual: dict = Depends(obtener_usuario_actual)):
         conexion.close()
 
 
-@router.get("/{id}")
+@router.get("/{id}", description="Roles permitidos: transportista, admin")
 def obtener_vehiculo(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    if usuario_actual["rol"] not in ["transportista", "admin"]:
+        raise HTTPException(
+            status_code=403, detail="No tienes permisos para acceder a esta información"
+        )
+
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
@@ -36,7 +45,7 @@ def obtener_vehiculo(id: int, usuario_actual: dict = Depends(obtener_usuario_act
         conexion.close()
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, description="Roles permitidos: admin")
 def crear_vehiculo(
     vehiculo: VehiculoEntrada, admin: dict = Depends(verificar_rol_admin)
 ):
@@ -52,17 +61,26 @@ def crear_vehiculo(
                 vehiculo.placa,
                 vehiculo.tipo,
                 vehiculo.capacidad_kg,
-                vehiculo.disponible,
+                int(vehiculo.disponible),
             ),
         )
         conexion.commit()
         nuevo_id = cursor.lastrowid
-        return {"mensaje": "Vehículo creado correctamente", "id": nuevo_id}
+        return {
+            "mensaje": "Vehículo creado correctamente",
+            "id": nuevo_id,
+            "creado_por": admin["nombre"],
+        }
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=400,
+            detail="La placa ingresada ya se encuentra registrada.",
+        )
     finally:
         conexion.close()
 
 
-@router.put("/{id}")
+@router.put("/{id}", description="Roles permitidos: admin")
 def actualizar_vehiculo(
     id: int, vehiculo: VehiculoEntrada, admin: dict = Depends(verificar_rol_admin)
 ):
@@ -82,7 +100,7 @@ def actualizar_vehiculo(
                 vehiculo.placa,
                 vehiculo.tipo,
                 vehiculo.capacidad_kg,
-                vehiculo.disponible,
+                int(vehiculo.disponible),
                 id,
             ),
         )
@@ -91,12 +109,15 @@ def actualizar_vehiculo(
             raise HTTPException(status_code=404, detail="Vehículo no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Vehículo actualizado correctamente"}
+        return {
+            "mensaje": "Vehículo actualizado correctamente",
+            "modificado_por": admin["nombre"],
+        }
     finally:
         conexion.close()
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", description="Roles permitidos: admin")
 def eliminar_vehiculo(id: int, admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
@@ -107,7 +128,10 @@ def eliminar_vehiculo(id: int, admin: dict = Depends(verificar_rol_admin)):
             raise HTTPException(status_code=404, detail="Vehículo no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Vehículo eliminado correctamente"}
+        return {
+            "mensaje": "Vehículo eliminado correctamente",
+            "eliminado_por": admin["nombre"],
+        }
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,
