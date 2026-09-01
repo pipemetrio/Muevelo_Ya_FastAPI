@@ -35,7 +35,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "*"
+    ],  # Usamos cualquier origen debido ya que MuéveloYa es un proyecto de transporte y puede ser utilizado desde distintos dispositivos o plataformas para gestionar los servicios.
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
