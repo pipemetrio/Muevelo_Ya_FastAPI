@@ -2,13 +2,13 @@
 
 API REST desarrollada con FastAPI para la prestación de servicios de transporte de objetos y mudanzas.
 
-El proyecto permite administrar las entidades principales del negocio mediante operaciones CRUD, consultas relacionales, autenticación JWT y control de permisos por roles.
-
 ---
 
 ## Objetivo y Alcance
 
 Desarrollar una API que solucione la logística de Obtención y gestión de servicios de transporte de objetos y mudanzas, facilitando la solicitud, asignación y seguimiento de los mismos de forma segura.
+
+El proyecto permite administrar las entidades principales del negocio mediante operaciones CRUD, consultas relacionales, autenticación JWT y control de permisos por roles.
 
 ---
 
