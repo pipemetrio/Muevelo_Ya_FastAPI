@@ -8,7 +8,10 @@ import bcrypt
 from database import database
 
 # Configuración del JWT
-SECRET_KEY = os.getenv("SECRET_KEY", "clave_secreta_muevelo_ya")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("La variable de entorno SECRET_KEY no está configurada.")
+
 ALGORITHM = "HS256"
 TIEMPO_EXPIRACION_MINUTOS = 30
 
@@ -35,7 +38,7 @@ def crear_token(data: dict) -> str:
     return jwt.encode(datos, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# --- Middleware de Autenticación y Autorización ---
+# --- Dependencias de Autenticación y Autorización ---
 def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
     error_autenticacion = HTTPException(
         status_code=401,
