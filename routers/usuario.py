@@ -7,36 +7,58 @@ from security import hash_password, obtener_usuario_actual, verificar_rol_admin
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
-@router.get("/")
-def listar_usuarios(usuario_actual: dict = Depends(obtener_usuario_actual)):
+@router.get("/", description="Roles permitidos: admin")
+def listar_usuarios(admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("SELECT id, nombre, telefono, correo, rol FROM Usuario")
+        cursor.execute("""
+            SELECT 
+                u.id AS usuario_id, u.nombre, u.telefono, u.correo, u.rol,
+                d.id AS direccion_id, d.alias, d.ciudad, d.barrio, d.direccion
+            FROM Usuario u
+            LEFT JOIN Direccion d ON u.id = d.usuario_id
+            """)
         filas = cursor.fetchall()
-        return [dict(fila) for fila in filas]
+
+        usuarios_dict = {}
+        for fila in filas:
+            u_id = fila["usuario_id"]
+            if u_id not in usuarios_dict:
+                usuarios_dict[u_id] = {
+                    "id": u_id,
+                    "nombre": fila["nombre"],
+                    "telefono": fila["telefono"],
+                    "correo": fila["correo"],
+                    "rol": fila["rol"],
+                    "direcciones": [],
+                }
+            if fila["direccion_id"] is not None:
+                usuarios_dict[u_id]["direcciones"].append(
+                    {
+                        "id": fila["direccion_id"],
+                        "alias": fila["alias"],
+                        "ciudad": fila["ciudad"],
+                        "barrio": fila["barrio"],
+                        "direccion": fila["direccion"],
+                    }
+                )
+
+        return list(usuarios_dict.values())
     finally:
         conexion.close()
 
 
-@router.get("/{id}")
+@router.get("/{id}", description="Permisos requeridos: cliente, transportista, admin")
 def obtener_usuario(id: int, usuario_actual: dict = Depends(obtener_usuario_actual)):
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
         cursor.execute(
             """
-            SELECT
-                u.id AS usuario_id,
-                u.nombre,
-                u.telefono,
-                u.correo,
-                u.rol,
-                d.id AS direccion_id,
-                d.alias,
-                d.ciudad,
-                d.barrio,
-                d.direccion
+            SELECT 
+                u.id AS usuario_id, u.nombre, u.telefono, u.correo, u.rol,
+                d.id AS direccion_id, d.alias, d.ciudad, d.barrio, d.direccion
             FROM Usuario u
             LEFT JOIN Direccion d ON u.id = d.usuario_id
             WHERE u.id = ?
@@ -74,10 +96,15 @@ def obtener_usuario(id: int, usuario_actual: dict = Depends(obtener_usuario_actu
         conexion.close()
 
 
-@router.get("/{id}/direcciones")
+@router.get("/{id}/direcciones", description="Roles permitidos: cliente, admin")
 def obtener_direcciones_usuario(
     id: int, usuario_actual: dict = Depends(obtener_usuario_actual)
 ):
+    if usuario_actual["rol"] not in ["cliente", "admin"]:
+        raise HTTPException(
+            status_code=403, detail="No tienes permisos para ver esta información"
+        )
+
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
@@ -94,7 +121,7 @@ def obtener_direcciones_usuario(
         conexion.close()
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, description="Roles permitidos: admin")
 def crear_usuario(usuario: UsuarioEntrada, admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
@@ -116,12 +143,16 @@ def crear_usuario(usuario: UsuarioEntrada, admin: dict = Depends(verificar_rol_a
         )
         conexion.commit()
         nuevo_id = cursor.lastrowid
-        return {"mensaje": "Usuario creado correctamente", "id": nuevo_id}
+        return {
+            "mensaje": "Usuario creado correctamente",
+            "id": nuevo_id,
+            "creado_por": admin["nombre"],
+        }
     finally:
         conexion.close()
 
 
-@router.put("/{id}")
+@router.put("/{id}", description="Roles permitidos: cliente, transportista, admin")
 def actualizar_usuario(
     id: int,
     usuario: UsuarioEntrada,
@@ -154,12 +185,15 @@ def actualizar_usuario(
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Usuario actualizado correctamente"}
+        return {
+            "mensaje": "Usuario actualizado correctamente",
+            "modificado_por": usuario_actual["nombre"],
+        }
     finally:
         conexion.close()
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", description="Roles permitidos: admin")
 def eliminar_usuario(id: int, admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
@@ -170,7 +204,10 @@ def eliminar_usuario(id: int, admin: dict = Depends(verificar_rol_admin)):
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         conexion.commit()
-        return {"mensaje": "Usuario eliminado correctamente"}
+        return {
+            "mensaje": "Usuario eliminado correctamente",
+            "eliminado_por": admin["nombre"],
+        }
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,

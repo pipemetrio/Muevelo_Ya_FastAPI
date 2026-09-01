@@ -89,67 +89,68 @@ Swagger UI: http://127.0.0.1:8000/docs
 
 Para las pruebas de autenticación y permisos, utiliza las siguientes credenciales (sembradas por defecto):
 
-| Correo electrónico    | Rol                     | Contraseña |
-| --------------------- | ----------------------- | ---------- |
-| admin@mueveloya.com   | Administrador (`admin`) | admin123   |
-| cliente@mueveloya.com | Cliente (`cliente`)     | cliente123 |
+| Correo electrónico    | Rol                             | Contraseña       |
+| --------------------- | ------------------------------- | ---------------- |
+| admin@mueveloya.com   | Administrador (`admin`)         | admin123         |
+| cliente@mueveloya.com | Cliente (`cliente`)             | cliente123       |
+| driver1@mueveloya.com | Transportista (`transportista`) | transportista123 |
 
 ---
 
 ## Diagrama Entidad-Relación
 
-## ![Diagrama del Sistema](evidence/diagrama_MER.drawio.png)
+## ![Diagrama del Sistema](evidence/Diagrama_MER_FastAPI.drawio.png)
 
 ---
 
 ## Tabla de Endpoints
 
-| Método     | Ruta                         | Permiso     | Descripción                                               |
-| :--------- | :--------------------------- | :---------- | :-------------------------------------------------------- |
-| **POST**   | `/auth/registro`             | Público     | Registro inicial de clientes                              |
-| **POST**   | `/auth/login`                | Público     | Autenticación y obtención de token JWT                    |
-| **GET**    | `/usuarios`                  | Autenticado | Listado general de usuarios                               |
-| **GET**    | `/usuarios/{id}`             | Autenticado | Consulta de usuario con sus direcciones anidadas (JOIN)   |
-| **GET**    | `/usuarios/{id}/direcciones` | Autenticado | Obtener direcciones de un usuario específico              |
-| **POST**   | `/usuarios`                  | Admin       | Creación directa de usuarios con asignación de rol        |
-| **PUT**    | `/usuarios/{id}`             | Autenticado | Actualización de datos del usuario                        |
-| **DELETE** | `/usuarios/{id}`             | Admin       | Eliminación de un usuario                                 |
-| **GET**    | `/transportistas`            | Autenticado | Listar transportistas                                     |
-| **GET**    | `/transportistas/{id}`       | Autenticado | Consultar transportista por ID                            |
-| **POST**   | `/transportistas`            | Admin       | Registrar transportista                                   |
-| **PUT**    | `/transportistas/{id}`       | Admin       | Actualizar transportista                                  |
-| **DELETE** | `/transportistas/{id}`       | Admin       | Eliminar transportista                                    |
-| **GET**    | `/vehiculos`                 | Autenticado | Listar vehículos                                          |
-| **GET**    | `/vehiculos/{id}`            | Autenticado | Consultar vehículo por ID                                 |
-| **POST**   | `/vehiculos`                 | Admin       | Registrar vehículo                                        |
-| **PUT**    | `/vehiculos/{id}`            | Admin       | Actualizar vehículo                                       |
-| **DELETE** | `/vehiculos/{id}`            | Admin       | Eliminar vehículo                                         |
-| **GET**    | `/direcciones`               | Autenticado | Listar todas las direcciones                              |
-| **GET**    | `/direcciones/{id}`          | Autenticado | Consultar dirección por ID                                |
-| **POST**   | `/direcciones`               | Autenticado | Registrar nueva dirección                                 |
-| **PUT**    | `/direcciones/{id}`          | Autenticado | Actualizar dirección existente                            |
-| **DELETE** | `/direcciones/{id}`          | Autenticado | Eliminar dirección                                        |
-| **GET**    | `/servicios`                 | Autenticado | Listar todos los servicios                                |
-| **GET**    | `/servicios/{id}`            | Autenticado | Consultar servicio por ID (JOIN cliente, origen, destino) |
-| **GET**    | `/servicios/{id}/objetos`    | Autenticado | Consultar objetos vinculados a un servicio                |
-| **POST**   | `/servicios`                 | Autenticado | Crear/solicitar nuevo servicio                            |
-| **PUT**    | `/servicios/{id}`            | Autenticado | Actualizar información de servicio                        |
-| **DELETE** | `/servicios/{id}`            | Autenticado | Eliminar servicio                                         |
-| **GET**    | `/objetos-transporte`        | Autenticado | Listar objetos de transporte                              |
-| **GET**    | `/objetos-transporte/{id}`   | Autenticado | Consultar objeto por ID                                   |
-| **POST**   | `/objetos-transporte`        | Autenticado | Registrar objeto dentro de un servicio                    |
-| **PUT**    | `/objetos-transporte/{id}`   | Autenticado | Actualizar objeto                                         |
-| **DELETE** | `/objetos-transporte/{id}`   | Autenticado | Eliminar objeto                                           |
-| **GET**    | `/asignaciones`              | Autenticado | Listar asignaciones logísticas                            |
-| **GET**    | `/asignaciones/{id}`         | Autenticado | Consultar asignación por ID                               |
-| **POST**   | `/asignaciones`              | Autenticado | Asignar servicio a transportista y vehículo               |
-| **PUT**    | `/asignaciones/{id}`         | Autenticado | Actualizar asignación                                     |
-| **DELETE** | `/asignaciones/{id}`         | Autenticado | Cancelar o eliminar asignación                            |
-| **GET**    | `/pagos`                     | Autenticado | Listar pagos                                              |
-| **GET**    | `/pagos/{id}`                | Autenticado | Consultar pago por ID                                     |
-| **POST**   | `/pagos`                     | Autenticado | Registrar pago de un servicio                             |
-| **PUT**    | `/pagos/{id}`                | Autenticado | Actualizar estado o valor de pago                         |
-| **DELETE** | `/pagos/{id}`                | Autenticado | Anular pago                                               |
+| Método     | Ruta                         | Permiso                       | Descripción                                 |
+| ---------- | ---------------------------- | ----------------------------- | ------------------------------------------- |
+| **POST**   | `/auth/registro`             | Público                       | Registro inicial de usuarios                |
+| **POST**   | `/auth/login`                | Público                       | Login y emisión de Token JWT                |
+| **GET**    | `/usuarios`                  | Admin                         | Listar todos los usuarios                   |
+| **GET**    | `/usuarios/{id}`             | Cliente, Transportista, Admin | Obtener usuario por ID                      |
+| **GET**    | `/usuarios/{id}/direcciones` | Cliente, Admin                | Obtener direcciones de un usuario           |
+| **POST**   | `/usuarios`                  | Admin                         | Crear usuario directamente                  |
+| **PUT**    | `/usuarios/{id}`             | Cliente, Transportista, Admin | Actualizar datos de usuario                 |
+| **DELETE** | `/usuarios/{id}`             | Admin                         | Eliminar usuario                            |
+| **GET**    | `/transportistas`            | Admin                         | Listar transportistas                       |
+| **GET**    | `/transportistas/{id}`       | Transportista, Admin          | Obtener transportista por ID                |
+| **POST**   | `/transportistas`            | Admin                         | Registrar transportista                     |
+| **PUT**    | `/transportistas/{id}`       | Admin                         | Actualizar transportista                    |
+| **DELETE** | `/transportistas/{id}`       | Admin                         | Eliminar transportista                      |
+| **GET**    | `/vehiculos`                 | Transportista, Admin          | Listar vehículos                            |
+| **GET**    | `/vehiculos/{id}`            | Transportista, Admin          | Obtener vehículo por ID                     |
+| **POST**   | `/vehiculos`                 | Admin                         | Registrar vehículo                          |
+| **PUT**    | `/vehiculos/{id}`            | Admin                         | Actualizar vehículo                         |
+| **DELETE** | `/vehiculos/{id}`            | Admin                         | Eliminar vehículo                           |
+| **GET**    | `/direcciones`               | Cliente, Admin                | Listar direcciones                          |
+| **GET**    | `/direcciones/{id}`          | Cliente, Admin                | Obtener dirección por ID                    |
+| **POST**   | `/direcciones`               | Cliente, Admin                | Crear dirección                             |
+| **PUT**    | `/direcciones/{id}`          | Cliente, Admin                | Actualizar dirección                        |
+| **DELETE** | `/direcciones/{id}`          | Cliente, Admin                | Eliminar dirección                          |
+| **GET**    | `/servicios`                 | Cliente, Transportista, Admin | Listar todos los servicios                  |
+| **GET**    | `/servicios/{id}`            | Cliente, Transportista, Admin | Obtener servicio por ID                     |
+| **GET**    | `/servicios/{id}/objetos`    | Cliente, Transportista, Admin | Obtener objetos de un servicio              |
+| **POST**   | `/servicios`                 | Cliente, Admin                | Solicitar nuevo servicio                    |
+| **PUT**    | `/servicios/{id}`            | Cliente, Admin                | Actualizar servicio o estado                |
+| **DELETE** | `/servicios/{id}`            | Cliente, Admin                | Eliminar o cancelar servicio                |
+| **GET**    | `/objetos-transporte`        | Cliente, Transportista, Admin | Listar todos los objetos de transporte      |
+| **GET**    | `/objetos-transporte/{id}`   | Cliente, Transportista, Admin | Obtener objeto por ID                       |
+| **POST**   | `/objetos-transporte`        | Cliente, Admin                | Registrar objeto en un servicio             |
+| **PUT**    | `/objetos-transporte/{id}`   | Cliente, Admin                | Actualizar datos de un objeto               |
+| **DELETE** | `/objetos-transporte/{id}`   | Cliente, Admin                | Eliminar objeto de transporte               |
+| **GET**    | `/asignaciones`              | Transportista, Admin          | Listar todas las asignaciones               |
+| **GET**    | `/asignaciones/{id}`         | Transportista, Admin          | Obtener asignación por ID                   |
+| **POST**   | `/asignaciones`              | Admin                         | Asignar servicio a transportista o vehículo |
+| **PUT**    | `/asignaciones/{id}`         | Admin                         | Actualizar asignación logística             |
+| **DELETE** | `/asignaciones/{id}`         | Admin                         | Cancelar o eliminar asignación              |
+| **GET**    | `/pagos`                     | Cliente, Admin                | Listar pagos                                |
+| **GET**    | `/pagos/{id}`                | Cliente, Admin                | Obtener pago por ID                         |
+| **POST**   | `/pagos`                     | Cliente, Admin                | Registrar pago de servicio                  |
+| **PUT**    | `/pagos/{id}`                | Admin                         | Actualizar estado del pago                  |
+| **DELETE** | `/pagos/{id}`                | Admin                         | Anular pago                                 |
 
 ---
 
