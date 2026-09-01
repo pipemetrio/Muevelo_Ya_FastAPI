@@ -1,5 +1,11 @@
 from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from database.database import crear_tablas, sembrar_datos
 from routers import (
     auth,
@@ -27,6 +33,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth.router)
 app.include_router(usuario.router)
 app.include_router(transportista.router)
@@ -40,4 +54,11 @@ app.include_router(pago.router)
 
 @app.get("/", tags=["Inicio"])
 def inicio():
-    return {"mensaje": "API MuéveloYa funcionando. Visita http://127.0.0.1:8000/docs"}
+    return {
+        "mensaje": "API MuéveloYa funcionando. Visita https://muevelo-ya-fastapi.onrender.com/docs"
+    }
+
+
+@app.get("/health", tags=["Health"])
+def health():
+    return {"estado": "ok"}

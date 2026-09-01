@@ -25,25 +25,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def hash_password(password: str) -> str:
-    """
-    Genera un hash seguro de una contraseña utilizando bcrypt.
-    """
     pwd_bytes = password.encode("utf-8")
-
     return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verificar_password(password_plana: str, password_hash: str) -> bool:
-    """
-    Verifica una contraseña comparándola con su hash almacenado.
-    """
     return bcrypt.checkpw(password_plana.encode("utf-8"), password_hash.encode("utf-8"))
 
 
 def crear_token(data: dict) -> str:
-    """
-    Crea un token JWT con fecha de expiración.
-    """
     datos = data.copy()
 
     expiracion = datetime.now(timezone.utc) + timedelta(
@@ -55,10 +45,9 @@ def crear_token(data: dict) -> str:
     return jwt.encode(datos, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Obtiene el usuario autenticado a partir del token JWT.
-    """
+def obtener_usuario_actual(
+    token: str = Depends(oauth2_scheme),
+) -> dict:
 
     error_autenticacion = HTTPException(
         status_code=401,
@@ -81,6 +70,7 @@ def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
 
     try:
         cursor = conexion.cursor()
+
         cursor.execute("SELECT * FROM Usuario WHERE correo = ?", (correo,))
 
         usuario = cursor.fetchone()
@@ -97,11 +87,6 @@ def obtener_usuario_actual(token: str = Depends(oauth2_scheme)) -> dict:
 def verificar_rol_transportista(
     usuario: dict = Depends(obtener_usuario_actual),
 ):
-    """
-    Permite el acceso únicamente a usuarios
-    con rol de transportista.
-    """
-
     if usuario["rol"] != "transportista":
         raise HTTPException(
             status_code=403,
@@ -111,11 +96,9 @@ def verificar_rol_transportista(
     return usuario
 
 
-def verificar_rol_admin(usuario: dict = Depends(obtener_usuario_actual)) -> dict:
-    """
-    Permite el acceso únicamente a usuarios
-    con rol de administrador.
-    """
+def verificar_rol_admin(
+    usuario: dict = Depends(obtener_usuario_actual),
+) -> dict:
 
     if usuario.get("rol") != "admin":
         raise HTTPException(
