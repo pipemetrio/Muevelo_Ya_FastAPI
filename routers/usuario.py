@@ -211,7 +211,7 @@ def eliminar_usuario(id: int, admin: dict = Depends(verificar_rol_admin)):
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,
-            detail="No se puede eliminar el usuario porque tiene direcciones registradas o historial de servicios asociados.",
+            detail="No se puede eliminar el usuario porque tiene un perfil de transportista o direcciones registradas o un historial de servicios asociados.",
         )
     finally:
         conexion.close()

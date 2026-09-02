@@ -101,6 +101,42 @@ def crear_transportista(
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
+
+        cursor.execute(
+            "SELECT rol FROM Usuario WHERE id = ?", (transportista.usuario_id,)
+        )
+        resultado = cursor.fetchone()
+
+        if not resultado:
+            raise HTTPException(
+                status_code=404,
+                detail=f"El usuario con ID {transportista.usuario_id} no existe.",
+            )
+
+        rol_actual = resultado[0]
+
+        if rol_actual == "admin":
+            raise HTTPException(
+                status_code=400,
+                detail="Un usuario con rol 'admin' no puede ser asignado como transportista.",
+            )
+
+        cursor.execute(
+            "SELECT id FROM Transportista WHERE usuario_id = ?",
+            (transportista.usuario_id,),
+        )
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=400,
+                detail=f"El usuario con ID {transportista.usuario_id} ya está registrado como transportista.",
+            )
+
+        if rol_actual == "cliente":
+            cursor.execute(
+                "UPDATE Usuario SET rol = 'transportista' WHERE id = ?",
+                (transportista.usuario_id,),
+            )
+
         cursor.execute(
             """
             INSERT INTO Transportista (documento, activo, usuario_id)
@@ -114,15 +150,18 @@ def crear_transportista(
         )
         conexion.commit()
         nuevo_id = cursor.lastrowid
+
         return {
             "mensaje": "Transportista creado correctamente",
             "id": nuevo_id,
+            "usuario_id": transportista.usuario_id,
             "creado_por": admin["nombre"],
         }
+
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,
-            detail="El documento o el usuario_id ya están registrados en otro transportista.",
+            detail="El documento ingresado ya está registrado en otro transportista.",
         )
     finally:
         conexion.close()
@@ -163,25 +202,37 @@ def actualizar_transportista(
         conexion.close()
 
 
-@router.delete("/{id}", description="Roles permitidos: admin")
+@router.delete("/{id}", status_code=200, description="Roles permitidos: admin")
 def eliminar_transportista(id: int, admin: dict = Depends(verificar_rol_admin)):
     conexion = database.obtener_conexion()
     try:
         cursor = conexion.cursor()
+
+        cursor.execute("SELECT usuario_id FROM Transportista WHERE id = ?", (id,))
+        resultado = cursor.fetchone()
+
+        if not resultado:
+            raise HTTPException(
+                status_code=404, detail=f"El transportista con ID {id} no existe."
+            )
+
+        usuario_id = resultado[0]
+
         cursor.execute("DELETE FROM Transportista WHERE id = ?", (id,))
 
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Transportista no encontrado")
+        cursor.execute("UPDATE Usuario SET rol = 'cliente' WHERE id = ?", (usuario_id,))
 
         conexion.commit()
+
         return {
-            "mensaje": "Transportista eliminado correctamente",
+            "mensaje": f"Transportista {id} eliminado correctamente y usuario {usuario_id} reasignado a rol 'cliente'.",
             "eliminado_por": admin["nombre"],
         }
+
     except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=400,
-            detail="No se puede eliminar el transportista porque tiene servicios asignados en el historial.",
+            detail="No se puede eliminar el transportista porque tiene asignaciones o registros activos asociados.",
         )
     finally:
         conexion.close()

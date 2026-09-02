@@ -2,13 +2,13 @@
 
 API REST desarrollada con FastAPI para la prestación de servicios de transporte de objetos y mudanzas.
 
-El proyecto permite administrar las entidades principales del negocio mediante operaciones CRUD, consultas relacionales, autenticación JWT y control de permisos por roles.
-
 ---
 
 ## Objetivo y Alcance
 
 Desarrollar una API que solucione la logística de Obtención y gestión de servicios de transporte de objetos y mudanzas, facilitando la solicitud, asignación y seguimiento de los mismos de forma segura.
+
+El proyecto permite administrar las entidades principales del negocio mediante operaciones CRUD, consultas relacionales, autenticación JWT y control de permisos por roles.
 
 ---
 
@@ -71,17 +71,17 @@ pip install -r requirements.txt
 Ejecuta el servidor de desarrollo con Uvicorn:
 
 ```Bash
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 Al iniciar la aplicación por primera vez, las tablas y los datos de prueba (sembrado de datos) se crearán de forma automática en la base de datos SQLite.
-El servidor estará disponible en: http://127.0.0.1:8000
+El servidor estará disponible en: https://muevelo-ya-fastapi.onrender.com
 
 ### 5. Acceder a la documentación interactiva
 
 Abre tu navegador web y visita:
 
-Swagger UI: http://127.0.0.1:8000/docs
+Swagger UI: https://muevelo-ya-fastapi.onrender.com/docs
 
 ---
 
