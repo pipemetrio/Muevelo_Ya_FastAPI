@@ -97,11 +97,77 @@ Para las pruebas de autenticación y permisos, utiliza las siguientes credencial
 
 ---
 
+---
+
+## Variables de Entorno Requeridas
+
+Para configurar correctamente el despliegue y la seguridad de la aplicación en producción, se deben definir las siguientes variables en el panel del servicio:
+
+| Variable | Descripción | Ejemplo de Uso |
+| :--- | :--- | :--- |
+| `SECRET_KEY` | Clave criptográfica privada para la firma de tokens JWT. | `super_secret_key_production` |
+| `ALGORITHM` | Algoritmo criptográfico utilizado para cifrar los tokens. | `HS256` |
+| `TIEMPO_EXPIRACION_MINUTOS` | Tiempo de vigencia del token de acceso en minutos. | `30` |
+| `ADMIN_PASSWORD` | Contraseña asignada para el usuario administrador inicial. | `admin_secure_pass` |
+
+---
+
+## Limitaciones Conocidas del Plan Gratuito
+
+El sistema se encuentra desplegado utilizando la infraestructura del plan gratuito de Render, lo cual conlleva restricciones técnicas específicas:
+
+* **Suspensión por inactividad (Spin down):** Tras un período de quince minutos sin recibir peticiones HTTP, el servicio suspende la instancia para optimizar recursos. La siguiente petición se encarga de despertar el servidor, generando un retraso aproximado de cincuenta segundos en la respuesta inicial.
+* **Sistema de archivos efímero:** El almacenamiento en disco del contenedor es volátil. Cada redespliegue o reinicio elimina el archivo de base de datos local (`mueveloya.db`), reconstruyéndose automáticamente desde cero mediante los scripts de inicialización. Como solución de arquitectura para producción, se debe migrar la persistencia hacia un servicio de base de datos relacional gestionado externamente como PostgreSQL.
+
+---
+
+## Bitácora de Despliegue y Fallos (Paso 5)
+
+Registro histórico de los errores analizados durante el proceso de despliegue en la nube, su causa raíz y la respectiva corrección aplicada:
+
+| Mensaje de Error / Incidencia | Causa Raíz | Corrección Aplicada |
+| :--- | :--- | :--- |
+| `ModuleNotFoundError` durante el arranque | La dependencia requerida no se encontraba declarada en el archivo `requirements.txt`. | Instalación local de la librería, actualización del archivo con `pip freeze > requirements.txt` y envío del cambio mediante commit. |
+| `No open ports detected` | El servidor arrancó escuchando de manera local en `127.0.0.1` o en un puerto estático en lugar de la interfaz pública. | Actualización del comando de inicio (*Start Command*) en Render para usar los parámetros `--host 0.0.0.0 --port $PORT`. |
+| `KeyError` o excepción al leer la clave secreta | Omisión de la variable de entorno en el panel de configuración de Render o error tipográfico en el nombre. | Verificación de nombres sensibles a mayúsculas y adición correcta de la variable en el entorno del servicio. |
+| Error de sintaxis o versión de Python | Discordancia entre la versión de Python instalada localmente y el entorno de compilación predeterminado del servidor. | Inclusión y configuración explícita de la versión soportada mediante el archivo `.python-version`. |
+
 ## Diagrama Entidad-Relación
 
 ## ![Diagrama del Sistema](evidence/Diagrama_MER_FastAPI.drawio.png)
 
 ---
+
+## Pruebas de Funcionamiento y Validación de Endpoints
+
+A continuación se documentan las pruebas de validación de códigos de estado HTTP ejecutadas sobre el entorno de producción en Render (`https://muevelo-ya-fastapi-jgrj.onrender.com`), asegurando el correcto control de seguridad, excepciones y validación de esquemas:
+
+* **Control de Acceso No Autorizado (Código HTTP 401):** Comprobación del rechazo de peticiones que omiten el token de autenticación `Bearer`.
+* **Control de Acceso Basado en Roles (Código HTTP 403):** Validación de restricciones cuando un usuario con rol de cliente intenta consumir rutas exclusivas de administración o transportistas (*Figura 1*).
+* **Recurso No Encontrado (Código HTTP 404):** Verificación de la respuesta del sistema al consultar identificadores inexistentes en la base de datos (*Figura 2*).
+* **Validación de Datos Incorrectos (Código HTTP 422):** Comprobación del filtrado automático de Pydantic al enviar estructuras JSON incompletas o erróneas (*Figura 3*).
+
+*Figura 1*  
+*Respuesta del servidor con código HTTP 401 al restringir acceso*  
+![Error 401](./evidence/capturas_guia_07/Captura%20Error%20401.png)
+
+*Figura 2*  
+*Respuesta del servidor con código HTTP 403 al restringir acceso por roles*  
+![Error 403](./evidence/capturas_guia_07/Captura%20Error%20403.png)
+
+*Figura 3*  
+*Respuesta del servidor con código HTTP 404 por recurso no encontrado*  
+![Error 404](./evidence/capturas_guia_07/Captura%20Error%20404.png)
+
+*Figura 4*  
+*Respuesta del servidor con código HTTP 422 por validación fallida de esquema*  
+![Error 422](./evidence/capturas_guia_07/Captura%20Error%20422.png)
+
+## Código QR de Acceso a la Documentación
+
+Escanea el siguiente código QR con tu dispositivo móvil para acceder directamente a la documentación interactiva de la API en producción durante la feria de proyectos:
+
+![Código QR de la Documentación](./evidence/QR_API_Mu%C3%A9veloYa.png)
 
 ## Tabla de Endpoints
 
